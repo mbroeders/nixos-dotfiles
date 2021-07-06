@@ -690,6 +690,8 @@
   (setq org-caldav-save-directory "~/Documents/org/calendar/")
   (setq plstore-cache-passphrase-for-symmetric-encryption t))
 
+(require 'org-re-reveal)
+
 (use-package app-launcher
   :straight '(app-launcher :host github :repo "SebastienWae/app-launcher"))
 

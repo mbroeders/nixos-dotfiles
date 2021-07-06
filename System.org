@@ -139,6 +139,7 @@
     - [[#end-of-use-package-org][End of use-package org]]
   - [[#org-journal][Org Journal]]
   - [[#sync-google-calendar][Sync Google Calendar]]
+  - [[#presentations-with-org-re-reveal][Presentations with org-re-reveal]]
   - [[#useful-packages-and-apps][Useful Packages and Apps]]
     - [[#app-launcher][App Launcher]]
     - [[#deft-note-taking][Deft (note taking)]]
@@ -2854,6 +2855,17 @@ I mainly use Google Calendar (one of my last Google apps), and I would like to s
   org-caldav
     oauth2-request
 #+end_src
+
+** Presentations with =org-re-reveal=
+
+I recently discovered [[https://github.com/emacsmirror/org-re-reveal][org-re-reveal]], a package with which you can create simple, yet beautiful presentations. I'm going to try this out in my next presentations. For now, I don't really set custom variables, but to make sure Emacs loads the library, I'll add a =require= block.
+
+#+begin_src emacs-lisp
+
+  (require 'org-re-reveal)
+
+#+end_src
+
 
 ** Useful Packages and Apps
 *** App Launcher
