@@ -1,0 +1,93 @@
+#+title: My Nixos and Emacs/EXWM configuration
+
+* Background
+
+I started using Emacs a couple of months ago, and much like everyone else, I stayed because =org-mode=. But, slowly my workflow became more and more centered around Emacs. Thanks to the amazing video series made by [[https://github.com/daviwil/emacs-from-scratch][David Wilson]], I quickly set up my own custom configuration and even started using GuixSD. However, although I try to support open-source software as much as I can, I also like to watch Netflix and use some proprietary software. Thus, I dove into Nixos. After messing around with a simple basic config, I discovered =nix flakes=.
+
+The configuration in this repo is based on the concept of flakes. It's how I maintain my 2 primary workstations: an Asus zenbook and an AMD-powered desktop. I mainly use these for some very basic programming, web-browsing and writing. The configuration consists of bits and pieces put together using other people's configuration files. [[https://www.reddit.com/r/NixOS/comments/mqw0cl/question_about_flakes_and_homemanager/][Reddit]] helped me to get my first config running. But then I stumbled upon [[https://github.com/rasendubi/dotfiles][Rasendubi's]] configuration, which inspired me to do the same. I shamelessly copied most of my system config from him. I try to give credit where credit is due, but I might have forgotten some people. Anyway, thanks all for some great examples and ideas!
+
+* Literal Configuration Files
+
+My configuration is described in several =org= files. These allow me to put code and comments together, and all the code gets /tangled/ to the correct locations. Right now, this is really a work in progress, needs a lot of cleanup. But for a start, it's not too bad I think. The main file atm is =System.org=; in this file, I maintain both my system configuration as well as my Emacs config. The reason for this is that I list the needed packages in my Emacs configuration. Thanks to =Org mode's noweb= functionality (I think), these packages get =tangled= into to right location in my Nixos config.
+
+* How To Use
+
+To install Nixos and Emacs (for my systems), run the following commands:
+
+** Install
+
+*** Install the needed programs, such as =nix flakes= and =emacs=
+
+#+begin_src sh
+
+  $ nix-shell -p git nixFlakes emacs
+
+#+end_src
+
+*** Set up =disk encryption=
+
+#+begin_src sh
+
+  # format the disk with the luks structure
+  $ cryptsetup luksFormat /dev/nvme0n1p6
+  # open the encrypted partition and map it to /dev/mapper/cryptroot
+  $ cryptsetup luksOpen /dev/nvme0n1p6 cryptroot
+  # format as usual
+  $ mkfs.ext4 -L system-root /dev/mapper/cryptroot
+  # mount
+  $ mount /dev/disk/by-label/system-root /mnt
+  $ mkdir /mnt/boot
+  $ mount /dev/nvme0n1p1 /mnt/boot
+  # If necessary, set up Swap partition
+  $ swapon /dev/nvme0n1p5
+
+#+end_src
+
+*** Let Nixos generate the correct config. And copy the correct partition information to this file.
+
+#+begin_src sh
+
+  $ nixos-generate-config --root /mnt
+  $ git clone https://github.com/mbroeders/nixos-dotfiles.git
+  $ emacs nixos-dotfiles/System.org
+
+#+end_src
+
+*** Install Nixos
+
+*Note* lately, =home-manager= gives an error (something with =nmd=). If this is the case, simply comment the home-manager config part in =nixos-config.nix= and install =Nixos=. After you boot into the newly installed system, you can uncomment the lines and install everything as usual.
+
+#+begin_src sh
+
+  $ sudo nixos-install --root /mnt --flake ./#{HOSTNAME}
+
+#+end_src
+
+** Post-Install
+
++ Set =password= for user
++ Clone the repository (e.g., =git clone git@github.com:mbroeders/nixos-dotfiles ~/.dotfiles=)
++ =Tangle= the needed configuration parts and use =stow= to make the necessary symlinks
+
+#+begin_src sh
+
+  $ ~/.bin/update-dotfiles
+
+#+end_src
+
+  Other things I configure post-install:
+  - Configure =Syncthing=
+  - Import my private keys and configure =gpg-agent.conf=
+  - For password management, I use a program named =Pass=: [[https://www.passwordstore.org/][the standard unix password manager]]. I keep all my passwords safe in a private repository on my personal server. Using Emac's =password store= ([[https://github.com/zakkak/emacs-password-store][see Github]]), it's easy to manage and use from within Emacs!
+
+* Notes
+
++ To update the system
+
+#+begin_src sh
+
+  $ sudo nix flake update
+  $ sudo nixos-rebuild switch --flake ~/.dotfiles/#SYSTEM_NAME
+
+#+end_src
+

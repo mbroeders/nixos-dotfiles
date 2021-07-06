@@ -1,0 +1,283 @@
+#+TITLE: Mail Configuration
+#+PROPERTY: header-args :mkdirp yes
+#+PROPERTY: header-args:emacs-lisp :tangle .emacs.d/lisp/mb-mail.el
+
+* Mail in Emacs with mu4e
+
+[[http://www.djcbsoftware.nl/code/mu/mu4e.html][mu4e]] is the best mail interface I've ever used because it's fast and makes it really easy to power through a huge e-mail backlog.  Love the ability to capture links to emails with org-mode too, althugh I don't often use this feature (yet). I've got 3 seperate mailboxes (personal, commercial and home-specific), which are nicely combined using =mu4e=.
+
+Useful mu4e manual pages:
+
+- [[https://www.djcbsoftware.nl/code/mu/mu4e/MSGV-Keybindings.html#MSGV-Keybindings][Key bindings]]
+- [[https://www.djcbsoftware.nl/code/mu/mu4e/Org_002dmode-links.html#Org_002dmode-links][org-mode integration]]
+
+  #+begin_src emacs-lisp
+
+    (use-package mu4e
+      :straight (:type built-in)
+      :defer 20 ; Wait until 20 seconds after startup
+      :config
+
+      ;; Load org-mode integration
+      (require 'org-mu4e)
+
+      ;; Refresh mail using isync every 10 minutes
+      (setq mu4e-update-interval (* 10 60))
+      (setq mu4e-get-mail-command "mbsync -a")
+      (setq mu4e-maildir "~/Mail")
+
+      ;; Use Ivy for mu4e completions (maildir folders, etc)
+      (setq mu4e-completing-read-function #'ido-completing-read)
+
+      ;; Make sure that moving a message (like to Trash) causes the
+      ;; message to get a new file name.  This helps to avoid the
+      ;; dreaded "UID is N beyond highest assigned" error.
+      ;; See this link for more info: https://stackoverflow.com/a/43461973
+      (setq mu4e-change-filenames-when-moving t)
+
+      ;; Set up contexts for email accounts
+      (setq mu4e-contexts
+            `(,(make-mu4e-context
+                :name "Personal"
+                :match-func (lambda (msg) (when msg
+                                            (string-prefix-p "/Personal" (mu4e-message-field msg :maildir))))
+                :vars '(
+                        (user-full-name . "Mark Broeders")
+                        (user-mail-address . "mail@markbroeders.nl")
+                        (mu4e-sent-folder . "/Personal/mail/Sent")
+                        (mu4e-trash-folder . "/Personal/mail/Trash")
+                        (mu4e-drafts-folder . "/Personal/mail/drafts")
+                        (mu4e-refile-folder . "/Personal/mail/Archive")
+                        (mu4e-sent-messages-behavior . sent)
+                        ))
+              ;; ,(make-mu4e-context
+              ;;   :name "Work"
+              ;;   :match-func (lambda (msg) (when msg
+              ;;                               (string-prefix-p "/Work" (mu4e-message-field msg :maildir))))
+
+                 ))
+      (setq mu4e-context-policy 'pick-first)
+
+      ;; Prevent mu4e from permanently deleting trashed items
+      ;; This snippet was taken from the following article:
+      ;; http://cachestocaches.com/2017/3/complete-guide-email-emacs-using-mu-and-/
+      (defun remove-nth-element (nth list)
+        (if (zerop nth) (cdr list)
+          (let ((last (nthcdr (1- nth) list)))
+            (setcdr last (cddr last))
+            list)))
+      (setq mu4e-marks (remove-nth-element 5 mu4e-marks))
+      (add-to-list 'mu4e-marks
+                   '(trash
+                     :char ("d" . "▼")
+                     :prompt "dtrash"
+                     :dyn-target (lambda (target msg) (mu4e-get-trash-folder msg))
+                     :action (lambda (docid msg target)
+                               (mu4e~proc-move docid
+                                               (mu4e~mark-check-target target) "-N"))))
+
+      ;; Display options
+      (setq mu4e-view-show-images t)
+      (setq mu4e-view-show-addresses 't)
+
+      ;; Composing mail
+      (setq mu4e-compose-dont-reply-to-self t)
+
+      ;; Use msmtp for sending e-mail
+      (setq sendmail-program "msmtp"
+            sendmail-function 'smtpmail-send-it
+            message-sendmail-f-is-evil t
+            message-sendmail-extra-arguments '("--read-envelope-from")
+            message-send-mail-function 'message-send-mail-with-sendmail)
+
+      ;; (See the documentation for `mu4e-sent-messages-behavior' if you have
+      ;; additional non-Gmail addresses and want assign them different
+      ;; behavior.)
+
+      ;; setup some handy shortcuts
+      ;; you can quickly switch to your Inbox -- press ``ji''
+      ;; then, when you want archive some messages, move them to
+      ;; the 'All Mail' folder by pressing ``ma''.
+      (setq mu4e-maildir-shortcuts
+            '(("/Personal/mail/inbox"        . ?i)
+              ("/Personal/mail/Sent"         . ?s)
+              ("/Personal/inbox/inbox"       . ?c)
+              ("/Personal/lorentzlaan/inbox" . ?l)
+              ("/Personal/mail/Trash"        . ?t)))
+
+      (add-to-list 'mu4e-bookmarks
+                   (make-mu4e-bookmark
+                    :name "All Inboxes"
+                    :query "maildir:/Personal/mail/inbox OR maildir:/Personal/inbox/inbox OR maildir:/Personal/lorentzlaan/inbox"
+                    :key ?i))
+
+      ;; don't keep message buffers around
+      (setq message-kill-buffer-on-exit t)
+
+      (setq mb/mu4e-inbox-query
+            "(maildir:/Personal/mail/inbox OR maildir:/Personal/inbox/inbox OR maildir:/Personal/lorentzlaan/inbox) AND flag:unread")
+
+      (defun mb/go-to-inbox ()
+        (interactive)
+        (mu4e-headers-search mb/mu4e-inbox-query))
+
+      ;; Start mu4e in the background so that it syncs mail periodically
+      (mu4e t))
+
+  #+end_src
+
+Use [[https://github.com/iqbalansari/mu4e-alert][mu4e-alert]] to show notifications when e-mail comes in:
+
+#+begin_src emacs-lisp
+
+  (use-package mu4e-alert
+    :after mu4e
+    :config
+    ;; Show unread emails from all inboxes
+    (setq mu4e-alert-interesting-mail-query mb/mu4e-inbox-query)
+
+    ;; Show notifications for mails already notified
+    (setq mu4e-alert-notify-repeated-mails nil)
+
+    (mu4e-alert-enable-notifications))
+#+end_src
+
+Provide the =mb-mail= package so that it can be =require='d:
+
+#+begin_src emacs-lisp
+
+  (provide 'mb-mail)
+
+#+end_src
+
+* Mail Synchronization
+
+Configuration docs: https://manpages.debian.org/unstable/isync/mbsync.1.en.html
+
+#+begin_src conf :tangle .mbsyncrc
+
+  ## PERSONAL ACCOUNT
+  IMAPaccount Personal
+  Host mail.mijndomein.nl
+  User mail@markbroeders.nl
+  PassCmd "gpg --quiet --for-your-eyes-only --decrypt $HOME/.password-store/email/mail@markbroeders.nl.gpg"
+  # Port 993
+  SSLType IMAPS
+  SSLVersions TLSv1.2
+  CertificateFile /etc/ssl/certs/ca-certificates.crt
+
+  # Define the remote from which mail will be synced
+  IMAPStore personal-remote
+  Account Personal
+
+  # Define where mail will be stored
+  MaildirStore personal-local
+  Path ~/Mail/Personal/mail/
+  Inbox ~/Mail/Personal/mail/inbox
+  SubFolders Verbatim
+
+  # Connect the remote and the local maildir
+  Channel personal
+  Master :personal-remote:
+  Slave :personal-local:
+  Patterns *
+  Create Both
+  SyncState *
+  Sync All
+  CopyArrivalDate yes
+  Expunge Both
+
+  ## COMMERCIAL ACCOUNT
+  IMAPaccount Commercial
+  Host mail.mijndomein.nl
+  User inbox@markbroeders.nl
+  PassCmd "gpg --quiet --for-your-eyes-only --decrypt $HOME/.password-store/email/inbox@markbroeders.nl.gpg"
+  # Port 993
+  SSLType IMAPS
+  SSLVersions TLSv1.2
+  CertificateFile /etc/ssl/certs/ca-certificates.crt
+
+  # Define the remote from which mail will be synced
+  IMAPStore commercial-remote
+  Account Commercial
+
+  # Define where mail will be stored
+  MaildirStore commercial-local
+  Path ~/Mail/Personal/inbox/
+  Inbox ~/Mail/Personal/inbox/inbox
+  SubFolders Verbatim
+
+  # Connect the remote and the local maildir
+  Channel commercial
+  Master :commercial-remote:
+  Slave :commercial-local:
+  Patterns *
+  Create Both
+  SyncState *
+  Sync All
+  Expunge Both
+  CopyArrivalDate yes
+
+  ## LORENTZLAAN ACCOUNT
+  IMAPaccount Ll
+  Host mail.mijndomein.nl
+  User lorentzlaan@markbroeders.nl
+  PassCmd "gpg --quiet --for-your-eyes-only --decrypt $HOME/.password-store/email/lorentzlaan@markbroeders.nl.gpg"
+  # Port 993
+  SSLType IMAPS
+  SSLVersions TLSv1.2
+  CertificateFile /etc/ssl/certs/ca-certificates.crt
+
+  # Define the remote from which mail will be synced
+  IMAPStore ll-remote
+  Account Ll
+
+  # Define where mail will be stored
+  MaildirStore ll-local
+  Path ~/Mail/Personal/lorentzlaan/
+  Inbox ~/Mail/Personal/lorentzlaan/inbox
+  SubFolders Verbatim
+
+  # Connect the remote and the local maildir
+  Channel ll
+  Master :ll-remote:
+  Slave :ll-local:
+  Patterns *
+  Create Both
+  SyncState *
+  Sync All
+  Expunge Both
+  CopyArrivalDate yes
+
+#+end_src
+
+Outgoing mail using msmtprc
+
+#+begin_src conf :tangle .msmtprc
+
+  defaults
+  port 587
+  tls on
+  tls_trust_file /etc/ssl/certs/ca-certificates.crt
+  account mijndomein
+  host mail.mijndomein.nl
+  from mail@markbroeders.nl
+
+  auth on
+  user mail@markbroeders.nl
+  passwordeval "gpg --quiet --for-your-eyes-only --no-tty --decrypt $HOME/.password-store/email/mail@markbroeders.nl.gpg"
+
+  account default : mijndomein
+
+#+end_src
+
+* Dependencies
+
+#+begin_src scheme :tangle .config/guix/manifests/mail.scm
+  
+  (specifications->manifest
+   '("mu"
+     "isync"
+     "msmtp"))
+  
+#+end_src

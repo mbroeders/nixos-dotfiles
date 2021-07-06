@@ -1,0 +1,13 @@
+archive
+.mbsyncrc
+.msmtprc
+desktop
+backgrounds
+flake.nix
+flake.lock
+nixos-config.nix
+.gitignore
+.stow-local-ignore
+^/.*\.org
+\.git
+widevine.sh

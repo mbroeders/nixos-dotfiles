@@ -1,0 +1,19 @@
+#+title: Widevine
+
+* Background
+
+Taken from =arch aur= I've downloaded the official =Google-Chrome-Stable= browser .deb package and extracted it using =ar -x file=. Might not be totally up-to-date, but working for me to get Netflix to work in qutebrowser.
+
+* Installation
+- Copy the chromium* folders to /usr/lib
+
+  #+begin_src
+
+sudo mkdir -pv /usr/lib
+sudo cp -rv {chromium,chromium-dev} /usr/lib/
+
+  #+end_src
+
+- Check the symlinks
+
+  Make sure =/usr/lib/chromium/libwidevinecdm.so= points to the correct location, i.e. =/usr/lib/chromium/WidevineCdm/_platform_specific/linux_x64/libwidevinecdm.so=

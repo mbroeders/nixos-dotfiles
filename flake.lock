@@ -1,0 +1,82 @@
+{
+  "nodes": {
+    "emacs-overlay": {
+      "locked": {
+        "lastModified": 1625303255,
+        "narHash": "sha256-tV5x9w0pFgtCry6w0h6hjziZpCuGngbdvt2mtMzweas=",
+        "owner": "nix-community",
+        "repo": "emacs-overlay",
+        "rev": "5ee8f21122f8a581d58b9ba7ba8fdf9d7de642be",
+        "type": "github"
+      },
+      "original": {
+        "owner": "nix-community",
+        "repo": "emacs-overlay",
+        "type": "github"
+      }
+    },
+    "home-manager": {
+      "inputs": {
+        "nixpkgs": [
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1625162737,
+        "narHash": "sha256-IzKTw2u/EKVr6TCQYylSAcOnrVRpir3wG3MUHj2LsTc=",
+        "owner": "rycee",
+        "repo": "home-manager",
+        "rev": "7df6656b113ce0d39c8b7d30915cafe046e1d64e",
+        "type": "github"
+      },
+      "original": {
+        "owner": "rycee",
+        "ref": "master",
+        "repo": "home-manager",
+        "type": "github"
+      }
+    },
+    "nixpkgs": {
+      "locked": {
+        "lastModified": 1625256291,
+        "narHash": "sha256-Ke/Z0SCVVY/KSfA7+rjh9oMy8MgKr1T1AHIKpHK6ODY=",
+        "owner": "nixos",
+        "repo": "nixpkgs",
+        "rev": "c40d0126f85b4b38bbcee0812366de9e0948c4ec",
+        "type": "github"
+      },
+      "original": {
+        "owner": "nixos",
+        "ref": "nixpkgs-unstable",
+        "repo": "nixpkgs",
+        "type": "github"
+      }
+    },
+    "nixpkgs-stable": {
+      "locked": {
+        "lastModified": 1625176478,
+        "narHash": "sha256-s1RTYNKw7ySyqrZjns9Cq+Nnjpp75ePgL06pgcbIpoA=",
+        "owner": "nixos",
+        "repo": "nixpkgs",
+        "rev": "21b696caf392ad6fa513caf3327d0aa0430ffb72",
+        "type": "github"
+      },
+      "original": {
+        "owner": "nixos",
+        "ref": "nixos-21.05",
+        "repo": "nixpkgs",
+        "type": "github"
+      }
+    },
+    "root": {
+      "inputs": {
+        "emacs-overlay": "emacs-overlay",
+        "home-manager": "home-manager",
+        "nixpkgs": "nixpkgs",
+        "nixpkgs-stable": "nixpkgs-stable"
+      }
+    }
+  },
+  "root": "root",
+  "version": 7
+}

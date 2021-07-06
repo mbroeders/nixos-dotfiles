@@ -1,0 +1,92 @@
+## PERSONAL ACCOUNT
+IMAPaccount Personal
+Host mail.mijndomein.nl
+User mail@markbroeders.nl
+PassCmd "gpg --quiet --for-your-eyes-only --decrypt $HOME/.password-store/email/mail@markbroeders.nl.gpg"
+# Port 993
+SSLType IMAPS
+SSLVersions TLSv1.2
+CertificateFile /etc/ssl/certs/ca-certificates.crt
+
+# Define the remote from which mail will be synced
+IMAPStore personal-remote
+Account Personal
+
+# Define where mail will be stored
+MaildirStore personal-local
+Path ~/Mail/Personal/mail/
+Inbox ~/Mail/Personal/mail/inbox
+SubFolders Verbatim
+
+# Connect the remote and the local maildir
+Channel personal
+Master :personal-remote:
+Slave :personal-local:
+Patterns *
+Create Both
+SyncState *
+Sync All
+CopyArrivalDate yes
+Expunge Both
+
+## COMMERCIAL ACCOUNT
+IMAPaccount Commercial
+Host mail.mijndomein.nl
+User inbox@markbroeders.nl
+PassCmd "gpg --quiet --for-your-eyes-only --decrypt $HOME/.password-store/email/inbox@markbroeders.nl.gpg"
+# Port 993
+SSLType IMAPS
+SSLVersions TLSv1.2
+CertificateFile /etc/ssl/certs/ca-certificates.crt
+
+# Define the remote from which mail will be synced
+IMAPStore commercial-remote
+Account Commercial
+
+# Define where mail will be stored
+MaildirStore commercial-local
+Path ~/Mail/Personal/inbox/
+Inbox ~/Mail/Personal/inbox/inbox
+SubFolders Verbatim
+
+# Connect the remote and the local maildir
+Channel commercial
+Master :commercial-remote:
+Slave :commercial-local:
+Patterns *
+Create Both
+SyncState *
+Sync All
+Expunge Both
+CopyArrivalDate yes
+
+## LORENTZLAAN ACCOUNT
+IMAPaccount Ll
+Host mail.mijndomein.nl
+User lorentzlaan@markbroeders.nl
+PassCmd "gpg --quiet --for-your-eyes-only --decrypt $HOME/.password-store/email/lorentzlaan@markbroeders.nl.gpg"
+# Port 993
+SSLType IMAPS
+SSLVersions TLSv1.2
+CertificateFile /etc/ssl/certs/ca-certificates.crt
+
+# Define the remote from which mail will be synced
+IMAPStore ll-remote
+Account Ll
+
+# Define where mail will be stored
+MaildirStore ll-local
+Path ~/Mail/Personal/lorentzlaan/
+Inbox ~/Mail/Personal/lorentzlaan/inbox
+SubFolders Verbatim
+
+# Connect the remote and the local maildir
+Channel ll
+Master :ll-remote:
+Slave :ll-local:
+Patterns *
+Create Both
+SyncState *
+Sync All
+Expunge Both
+CopyArrivalDate yes

@@ -1,0 +1,11 @@
+flake.nix
+.mbsyncrc
+.msmtprc
+
+.emacs.d/straight
+.emacs.d/eshell/history
+.emacs.d/eshell/lastdir
+.emacs.d/eln-cache
+
+.config/qutebrowser/bookmarks
+.config/xsettingsd

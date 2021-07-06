@@ -1,0 +1,379 @@
+#+title: Emacs - Getting Things Done
+#+PROPERTY: header-args:emacs-lisp :tangle .emacs.d/lisp/mb-workflow.el
+
+This file represents my GTD workflow. It is largely copied from [[https://github.com/rougier/emacs-gtd][Rougier]], I will make adjustments based on things I run into.
+
+* Basic setup
+
+First, we have to create an =inbox=, a place to collect all my ideas, appointments, tasks et cetera. I already have a folder =~/Documents/org/gtd= that I sync across all my devices using [[https://syncthing.net/][Syncthing]]. I host this folder on my private NAS.
+
+#+begin_src emacs-lisp :tangle .emacs.d/lisp/mb-workflow.el
+
+  (setq org-directory "~/Documents/org"
+
+        ;; Used for org roam and deft
+        org-roam-directory "~/Documents/org/notes"
+
+        ;; Needed fot my GTD workflow
+        org-default-notes-file "~/Documents/org/notes/main.org"
+
+        ;; Personal/Family get synced wih org-caldav
+        ;; inbox is my GTD inbox file
+        org-agenda-files '( "~/Documents/org/calendar/personal.org"
+                            "~/Documents/org/calendar/family.org"
+                            "~/Documents/org/gtd/inbox.org"
+                            "~/Documents/org/gtd/agenda.org"
+                            "~/Documents/org/gtd/projects.org"
+                            "~/Documents/org/gtd/notes.org"))
+
+#+end_src
+
+* Capture Templates
+
+Capture templates are so useful and absolutely necessary when you want to implemt GTD. I also use this to keep track of the books I read en the sports I practice.
+
+#+begin_src emacs-lisp :tangle .emacs.d/lisp/mb-workflow.el
+
+  (setq org-capture-templates
+        `(("i" "Inbox" entry  (file "~/Documents/org/gtd/inbox.org")
+           ,(concat "* TODO %?\n"
+                    "/Entered on/ %U"))
+          ("m" "Meeting" entry  (file+headline "~/Documents/org/gtd/agenda.org" "Future")
+           ,(concat "* %? :meeting:\n"
+                    "<%<%Y-%m-%d %a %H:00>>"))
+          ("n" "Note" entry  (file "gtd/notes.org")
+           ,(concat "* Note (%a)\n"
+                    "/Entered on/ %U\n" "\n" "%?"))
+          ("@" "Inbox [mu4e]" entry (file "gtd/inbox.org")
+           ,(concat "* TODO Reply to \"%a\" %?\n"
+                    "/Entered on/ %U"))
+
+          ;; This is a first menu --> Sports
+          ("m" "Metrics Capture / Sports")
+          ("mc" "Fietsen" table-line
+           (file+headline "~/Documents/org/gtd/metrics.org" "Cycling")
+           "| %U | %^{Distance} | %^{Avg speed} | %^{Duration} | %^{Avg heartrate} | %^{Notes} |" :kill-buffer t)
+          ("mr" "Hardlopen" table-line
+           (file+headline "~/Documents/org/gtd/metrics.org" "Running"))
+          ("mw" "Weight" table-line
+           (file+headline "~/Documents/org/gtd/metrics.org" "Weight")
+           "| %U | %^{Weight} | %^{Notes} |" :kill-buffer t)
+
+          ;; And a second menu for my hobbies
+          ("h" "Hobbies")
+          ("hb" "Book entry" entry (file+headline "~/Documents/org/gtd/books.org" "2021")
+           "* %^{prompt|TODO|READING|DONE} %^{Title}\n:PROPERTIES:\n:author: %?\n:END:\n" :prepend t :empty-lines-after 1)))
+
+#+end_src
+
+* Keybindings
+
+The set of available commands is as follows:
+
+| Command                          | Bindings         | Mode + where           |
+|----------------------------------+------------------|------------------------|
+| Agenda                           | *C-c a*            | any                    |
+| Agenda for today                 | *C-c a a*          | any                    |
+|                                  |                  |                        |
+| Capture menu                     | *C-c c*            | any                    |
+| Capture meeting (agenda.org)     | *C-c c m*          | any                    |
+| Capture meeting note (notes.org) | *C-c c n*          | any                    |
+| Capture generic TODO (inbox.org) | *C-c i* or *C-c c i* | any                    |
+| Capture mail TODO (inbox.org)    | *C-c i* or *C-c c @* | mu4e view/headers mode |
+|                                  |                  |                        |
+| Add/Remove tag                   | *C-c C-c*          | org-mode on headline   |
+| Update progress indicator        | *C-c C-c*          | org-mode on [/]        |
+| Update all progress indicators   | *C-u C-c #*        | org-mode               |
+| Enter estimated effort           | *C-c C-x e*        | org-mode on headline   |
+| Refile section                   | *C-c C-w*          | org-mode on headline   |
+| Move to next TODO state          | *S-right*          | org-mode on TODO       |
+|                                  |                  |                        |
+| Clock in                         | *C-c C-x C-i*      | org-mode on headline   |
+| Clock out                        | *C-c C-x C-o*      | org-mode on headline   |
+|                                  |                  |                        |
+| Plain timestamp                  | *C-c .*            | org-mode               |
+| Scheduled timestamp              | *C-c s*            | org-mode               |
+| Deadline timestamp               | *C-c d*            | org-mode               |
+| Inactive timestamp               | *C-c !*            | org-mode               |
+
+
+#+begin_src emacs-lisp :tangle .emacs.d/lisp/mb-workflow.el
+
+  (defun org-capture-inbox ()
+    (interactive)
+    (call-interactively 'org-store-link)
+    (org-capture nil "i"))
+
+  (defun org-capture-mail ()
+    (interactive)
+    (call-interactively 'org-store-link)
+    (org-capture nil "@"))
+
+  ;; Use full window for org-capture
+  (add-hook 'org-capture-mode-hook 'delete-other-windows)
+
+  ;; Key bindings
+  (define-key global-map            (kbd "C-c a") 'org-agenda)
+  (define-key global-map            (kbd "C-c c") 'org-capture)
+  (define-key global-map            (kbd "C-c i") 'org-capture-inbox)
+
+  (require 'mu4e)
+  (define-key mu4e-headers-mode-map (kbd "C-c i") 'org-capture-mail)
+  (define-key mu4e-view-mode-map    (kbd "C-c i") 'org-capture-mail)
+
+#+end_src
+
+* Recurrent Events
+
+See my =agenda.org= file
+
+Here is a [[https://emacs.stackexchange.com/questions/10504][quick reminder]] by [[https://emacs.stackexchange.com/users/780/glucas][Greg Lucas]] on how to enter date and their definition:
+
+- *PLAIN timestamp* (=C-c .=) :: This is used for things like appointments where
+  the entry occurs at a specific date/time. Such an entry will show up in
+  the agenda on the specified day, and will not show up after that day has
+  passed. Note that an appointment in the past won't keep showing up on
+  your agenda regardless of whether you mark it DONE: if you didn't go to
+  your doctor's appointment yesterday, that doesn't mean you still have one
+  today!
+
+- *SCHEDULED timestamp* (=C-c C-s=) :: This is used to indicate when you intend to
+  do the task. It will show up on the agenda on the scheduled day. If you
+  don't complete the task at that time, it will continue to show up on the
+  agenda on the following days to show you that you have not completed
+  something that you planned to do.
+
+- *DEADLINE timestamp* (=C-c C-d=) :: This is used to indicate when something must
+  be completed. Typically you want to see deadlines ahead of time, so that
+  you can do whatever it is that must be done to meet them. Like a
+  scheduled entry, if you miss a deadline it will continue to appear on the
+  agenda as past due.
+
+- *INACTIVE timestamp* (=C-c !=) :: This is when you want to attach a date to an
+  entry but do not want it to show up in the agenda at all. Inactive
+  timestamps have no special behavior.
+
+* Working with Mail
+* Effort and Moving Things
+
+Before refiling inbox entries into projects, I usually try to set an
+estimated time (effort) needed to complete the tasks as well as some
+contextual information (using tags). To ease the process, we'll first
+modify the inbox header to add typical estimated efforts and some tags that
+will speed the overall processing of each entry.
+
+#+begin_src org
+,#+STARTUP: content showstars indent
+,#+TAGS: @home(h) @work(w) @mail(m) @comp(c) @web(b)
+,#+PROPERTY: Effort_ALL 0 0:05 0:10 0:15 0:30 0:45 1:00 2:00 4:00
+#+end_src
+
+Before refiling (i.e. moving) an entry, I will set some tags using the =C-c
+C-c= keybinding and if the entry is an atomic task (i.e. that can be done
+independently of any others tasks), I'll assign an [[https://orgmode.org/manual/Effort-Estimates.html][estimated effort]] using
+the existing =C-c C-x e= key binding. For example, let's consider the
+following entry before review:
+
+#+begin_src org
+,* TODO Write review section (GTD.org)
+  /Entered on [2020-09-12 Sat 09:20]/
+#+end_src
+
+After having set effort and tags, the entry reads:
+
+#+begin_src org
+,* TODO Write review section (GTD.org)                                        :@comp:
+  /:PROPERTIES:/
+  /:Effort:   0:30/
+  /:END:/
+  /Entered on [2020-09-12 Sat 09:20]/
+#+end_src
+
+Tags are supposed to give some contextual information on where the task can
+be completed. However, I did not really use them partly due to the 2020
+sanitary crisis that tends to blur the line between work and home. Setting
+the estimated is however quite important for me because when I'll activate
+a task, the estimated effort will be displayed in the agenda and will help
+me to decide if I can engage in task depending on the amount of free time I
+have. This is especially useful for small tasks (5 minutes) that can be
+completed any time.
+
+Now it's time to move the entry.
+
+I explained that inbox entries have to be moved into the relevant project
+under the *Tasks* headline. To do that, we'll use the [[https://orgmode.org/manual/Refile-and-Copy.html#Refile-and-Copy][org-refile]] function
+(bound to =C-c C-w= when on a headline) and specify where the entry can be
+refiled in the =projects.org=. If you remember, we also have notes that
+needs to be refiled in projects such that targets in =projects.org= are
+either *Notes* or *Tasks*. We thus need to define a refile target using
+regexp. One easy way to do that is to use the [[https://www.gnu.org/software/emacs/manual/html_node/elisp/Regexp-Functions.html][regexp-opt]] function:
+
+#+begin_src lisp
+(regexp-opt '("Tasks" "Notes"))
+#+end_src
+
+You can evaluate the expression by placing the cursor at the end of the
+line and type =C-u C-x C-e=. The optimized regex
+(~"\\(?:\\(?:Note\\|Task\\)s\\)"~) should appear at the end of the line. We
+can now use it so specifiy our targets:
+
+#+begin_src lisp
+(setq org-refile-targets
+      '(("projects.org" :regexp . "\\(?:\\(?:Note\\|Task\\)s\\)")))
+#+end_src
+
+Last step is to tell org-mode we want to specify a refile target using the
+file path.
+
+#+begin_src lisp
+(setq org-refile-use-outline-path 'file)
+(setq org-outline-path-complete-in-steps nil)
+#+end_src
+
+To refile a J.Doe related inbox entry, you can then type:
+
+#+begin_example
+C-c C-w + "J.Doe" + tab + "T" + tab
+#+end_example
+
+and this will be resolved to ="projects.org/Students/J.Doe/Tasks"=.
+
+This evaluates to the following in our configuration:
+
+#+begin_src emacs-lisp :tangle .emacs.d/lisp/mb-workflow.el
+
+  (setq org-refile-use-outline-path 'file)
+  (setq org-outline-path-complete-in-steps nil)
+  (setq org-refile-targets
+      '(("projects.org" :regexp . "\\(?:\\(?:Note\\|Task\\)s\\)")))
+
+#+end_src
+
+* Automatic Saving after Refiling
+
+After refilling, you will have to save manually your opened org files, which is not really convenient.
+Fortunately, a small change in the code will save the files automatically.
+
+First, you need to get the files you want to save with their fullpath. Now, we create a new function to save those files, using the model of the =org-save-all-org-buffers= function and finally we add it after the =org-refile= action:
+
+#+begin_src emacs-lisp :tangle .emacs.d/lisp/mb-workflow.el
+
+  ;; Save the corresponding buffers
+  (defun gtd-save-org-buffers ()
+    "Save `org-agenda-files' buffers without user confirmation.
+  See also `org-save-all-org-buffers'"
+    (interactive)
+    (message "Saving org-agenda-files buffers...")
+    (save-some-buffers t (lambda ()
+         (when (member (buffer-file-name) org-agenda-files)
+           t)))
+    (message "Saving org-agenda-files buffers... done"))
+
+  ;; Add it after refile
+  (advice-add 'org-refile :after
+        (lambda (&rest _)
+          (gtd-save-org-buffers)))
+
+#+end_src
+
+* Activating a Task
+
+After having emptied the inbox, it's time to have a look at the different
+projects to decide what are the next tasks to be activated. Before doing
+that, we need to define what is an active task. Org-mode defines [[https://orgmode.org/manual/TODO-Basics.html][two
+different states]] for *TODO* items: *TODO* and *DONE*. We need to modify this in
+order to introduce two new non-terminal state: *NEXT* to express this is the
+next task to be completed and *HOLD* to express this task is on hold (for
+whaterver reason):
+
+#+begin_src emacs-lisp :tangle .emacs.d/lisp/mb-workflow.el
+
+  (setq org-todo-keywords
+        '((sequence "TODO(t)" "NEXT(n)" "HOLD(h)" "|" "DONE(d)")
+          (sequence "PLANNED(p)" "READING(r)" "|" "DONE(d!)" "CANC(k@")))
+
+#+end_src
+
+Thanks to [[https://emacs.stackexchange.com/questions/35751][Erik Anderson]], we can also add a hook that will log when we
+activate a task by creating an "ACTIVATED" property the first time the task
+enters the *NEXT* state:
+
+#+begin_src emacs-lisp :tangle .emacs.d/lisp/mb-workflow.el
+
+  (defun log-todo-next-creation-date (&rest ignore)
+    "Log NEXT creation time in the property drawer under the key 'ACTIVATED'"
+    (when (and (string= (org-get-todo-state) "NEXT")
+               (not (org-entry-get nil "ACTIVATED")))
+      (org-entry-put nil "ACTIVATED" (format-time-string "[%Y-%m-%d]"))))
+  (add-hook 'org-after-todo-state-change-hook #'log-todo-next-creation-date)
+
+#+end_src
+
+We'll see in the next section how to exploit this property. Next step is to
+[[https://orgmode.org/manual/Checkboxes.html][update the trailing]] =[/]= behind each headline. To do that, you can type =C-u
+C-c #=. For each projects, you now have something like =[x/y]= where x is the
+number of closed tasks and y is the total number of tasks. Any project with
+x < y means that there are some tasks that can be activated. You can now
+selectively open a project and decide if you want to activate one of the
+non closed task. The most easy way to do that is to go over the TODO
+keyword and use =S-right= to advance to the *NEXT* state.
+
+* Completing a task
+
+Once you've chosen a task to do, and before starting the task, you can
+choose to log the time it will actually take to complete the task such that
+you can later refine your estimation. Just type *C-c C-x C-i* (clock in) to
+start the clock and *C-c C-x C-o* (clock out) to stop the clock and to add the
+duration in the logbook. Once a task is completed, you can change its state
+from *NEXT* to *DONE* (using *S-right* while the cursor is over the *NEXT*
+word). In order to keep track of when the task was completed, we can ask
+org-mode to log that:
+
+#+begin_src emacs-lisp :tangle .emacs.d/lisp/mb-workflow.el
+
+  (setq org-log-done 'time)
+
+#+end_src
+
+* Agenda
+
+In our agenda we can create a nice-looking overview of all tasks, next items and other appointments. It starts with day as default, but you can easily change to week view with =v w= or just =w=.
+
+#+begin_src emacs-lisp :tangle .emacs.d/lisp/mb-workflow.el
+
+  (setq org-agenda-custom-commands
+      '(("g" "Get Things Done (GTD)"
+         ((agenda ""
+                  ((org-agenda-span 'day)
+                   (org-agenda-skip-function
+                    '(org-agenda-skip-entry-if 'deadline))
+                   (org-deadline-warning-days 0)))
+          (todo "NEXT"
+                ((org-agenda-skip-function
+                  '(org-agenda-skip-entry-if 'deadline))
+                 (org-agenda-prefix-format "  %i %-12:c [%e] ")
+                 (org-agenda-overriding-header "\nTasks\n")))
+          (agenda nil
+                  ((org-agenda-entry-types '(:deadline))
+                   (org-agenda-format-date "")
+                   (org-deadline-warning-days 7)
+                   (org-agenda-skip-function
+                    '(org-agenda-skip-entry-if 'notregexp "\\* NEXT"))
+                   (org-agenda-overriding-header "\nDeadlines")))
+          (tags-todo "inbox"
+                     ((org-agenda-prefix-format "  %?-12t% s")
+                      (org-agenda-overriding-header "\nInbox\n")))
+          (tags "CLOSED>=\"<today>\""
+                ((org-agenda-overriding-header "\nCompleted today\n")))))))
+
+#+end_src
+
+* Module Setup
+
+This Org file produces a file called =mb-workflow.el= which gets loaded up in =init.el=; export it as a feature so that it can be loaded with =require=.
+
+#+begin_src emacs-lisp :tangle .emacs.d/lisp/mb-workflow.el
+
+(provide 'mb-workflow)
+
+#+end_src
