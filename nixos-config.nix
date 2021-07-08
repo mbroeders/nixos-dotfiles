@@ -210,7 +210,8 @@ in
       services.xserver.windowManager.session = lib.singleton {
         name = "exwm";
         start = ''
-          xmodmap ~/.dotfiles/.Xmodmap
+          xmodmap $HOME/.dotfiles/.Xmodmap
+          source $HOME/.zprofile
           xhost +si:localuser:$USER
           exec emacs --debug-init
         '';
