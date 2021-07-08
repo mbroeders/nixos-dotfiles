@@ -800,7 +800,6 @@ install emacs with home manager (~<<home-manager-section>>~)
       pkgs.gnutls
       pkgs.libtool
   
-      pkgs.python
       pkgs.rustup
     ];
   

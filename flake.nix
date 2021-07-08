@@ -185,7 +185,6 @@
                 pkgs.gnutls
                 pkgs.libtool
             
-                pkgs.python
                 pkgs.rustup
               ];
             
