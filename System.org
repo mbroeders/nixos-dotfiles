@@ -2716,14 +2716,15 @@ the template. More documentation can be found at the Org Mode [[https://orgmode.
 documentation page.
 
 #+begin_src emacs-lisp
-  
+
   ;; This is needed as of Org 9.2
   (require 'org-tempo)
-  
+
   (add-to-list 'org-structure-template-alist '("sh" . "src sh"))
   (add-to-list 'org-structure-template-alist '("el" . "src emacs-lisp"))
   (add-to-list 'org-structure-template-alist '("py" . "src python"))
-  
+  (add-to-list 'org-structure-template-alist '("r"  . "src rust"))
+
 #+end_src
 
 *** Org Bullets using Superstar
